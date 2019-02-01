@@ -6,6 +6,16 @@ import java.util.Iterator;
 
 public class Board extends State {
 
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_BLACK = "\u001B[30m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_WHITE = "\u001B[37m";
+
     private MoulinBoardStructure struct;
 
     private HashMap<Placement, Player> board;
@@ -226,10 +236,36 @@ public class Board extends State {
         StringBuilder sb = new StringBuilder();
 
         for (char a = 'A'; a <= 'X'; a++) {
-            sb.append(board.get(new alpha_beta.model.game.Placement(a)));
+            Player p = board.get(new alpha_beta.model.game.Placement(a));
+            if (p == null) {
+                sb.append("X");
+            } else if (p == player1) {
+                sb.append(ANSI_RED + p + ANSI_RESET);
+            } else {
+                sb.append(ANSI_BLUE + p + ANSI_RESET);
+            }
 
-            if (a == 'C' || a == 'F' || a == 'I' || a == 'O' || a == 'R' || a == 'U' || a == 'X') {
-                sb.append("\n");
+
+            if (a == 'U') {
+                sb.append(" |\n");
+            } else if (a == 'A' || a == 'B' || a == 'V' || a == 'W') {
+                sb.append("-----");
+            } else if (a == 'D' | a == 'E' || a == 'S' || a == 'T') {
+                sb.append("---");
+            } else if (a == 'L') {
+                sb.append("   ");
+            } else if (a == 'R') {
+                sb.append(" | |\n| ");
+            } else if (a == 'C') {
+                sb.append("\n| ");
+            } else if (a == 'F') {
+                sb.append(" |\n| | ");
+            } else if (a == 'O') {
+                sb.append("\n| | ");
+            } else if (a == 'G' || a == 'H' || a == 'P' || a == 'Q' || a == 'J' || a == 'K' || a == 'M' || a == 'N') {
+                sb.append("-");
+            } else if (a == 'I') {
+                sb.append(" | |\n");
             }
 
         }
