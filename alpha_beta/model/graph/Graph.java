@@ -1,6 +1,6 @@
-package alpha_beta.graph;
+package alpha_beta.model.graph;
 
-import alpha_beta.game.State;
+import alpha_beta.model.game.State;
 
 import java.util.ArrayList;
 import java.util.HashMap;

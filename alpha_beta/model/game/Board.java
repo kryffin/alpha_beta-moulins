@@ -1,4 +1,4 @@
-package alpha_beta.game;
+package alpha_beta.model.game;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,9 +10,9 @@ public class Board extends State {
 
     private HashMap<Placement, Player> board;
 
-    private Player player1; //joueur courant
+    private alpha_beta.model.game.Player player1; //joueur courant
 
-    private Player player2;
+    private alpha_beta.model.game.Player player2;
 
     private int ownPawnsToPlace;
 
@@ -23,7 +23,7 @@ public class Board extends State {
     private int advPawnsCount;
 
     public Board (Board b) {
-        this.struct = new MoulinBoardStructure();
+        this.struct = new alpha_beta.model.game.MoulinBoardStructure();
         this.board = new HashMap<>(b.getBoard());
         this.player1 = b.getPlayer1();
         this.player2 = b.getPlayer2();
@@ -33,11 +33,11 @@ public class Board extends State {
         this.advPawnsCount = b.getAdvPawnsCount();
     }
 
-    public Board(Player player1, Player player2) {
-        this.struct = new MoulinBoardStructure();
+    public Board(alpha_beta.model.game.Player player1, alpha_beta.model.game.Player player2) {
+        this.struct = new alpha_beta.model.game.MoulinBoardStructure();
         board = new HashMap<>();
         for (char a = 'A'; a <= 'X'; a++) {
-            board.put(new Placement(String.valueOf(a)), null);
+            board.put(new alpha_beta.model.game.Placement(a), null);
         }
         this.player1 = player1;
         this.player2 = player2;
@@ -47,8 +47,8 @@ public class Board extends State {
         this.advPawnsCount = 9;
     }
 
-    public Board(HashMap<Placement, Player> board, Player player1, Player player2, int ownPawnsToPlace, int ownPawnsCount, int advPawnsToPlace, int advPawnsCount) {
-        this.struct = new MoulinBoardStructure();
+    public Board(HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> board, alpha_beta.model.game.Player player1, alpha_beta.model.game.Player player2, int ownPawnsToPlace, int ownPawnsCount, int advPawnsToPlace, int advPawnsCount) {
+        this.struct = new alpha_beta.model.game.MoulinBoardStructure();
         this.board = board;
         this.player1 = player1;
         this.player2 = player2;
@@ -64,7 +64,7 @@ public class Board extends State {
     }
 
     @Override
-    public Player currentPlayer() {
+    public alpha_beta.model.game.Player currentPlayer() {
         return null;
     }
 
@@ -74,16 +74,16 @@ public class Board extends State {
     }
 
     @Override
-    public Iterator<State> iterator() {
-        ArrayList<State> moves = new ArrayList<>();
+    public Iterator<alpha_beta.model.game.State> iterator() {
+        ArrayList<alpha_beta.model.game.State> moves = new ArrayList<>();
 
         if (ownPawnsToPlace != 0) {
             //placement : il reste des pions à placer on créer donc des fils de cet état pour chaque placement de pion possible
 
             for (char a = 'A'; a <= 'X'; a++) {
-                if (board.get(new Placement(String.valueOf(a))) == null) {
-                    HashMap<Placement, Player> h = new HashMap<>(board);
-                    h.replace(new Placement(String.valueOf(a)), player1);
+                if (board.get(new alpha_beta.model.game.Placement(a)) == null) {
+                    HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> h = new HashMap<>(board);
+                    h.replace(new alpha_beta.model.game.Placement(a), player1);
                     Board b = new Board(this);
                     b.setBoard(h);
                     b.setOwnPawnsToPlace(b.getOwnPawnsToPlace()-1);
@@ -96,19 +96,31 @@ public class Board extends State {
 
             if (ownPawnsCount == 3) {
 
-                for (Placement p : board.keySet()) {
+                for (alpha_beta.model.game.Placement p : board.keySet()) {
                     if (board.get(p) == player1) {
                         //parcours de nos pions
 
-                        for (Placement pp : board.keySet()) {
+                        for (alpha_beta.model.game.Placement pp : board.keySet()) {
                             //parcours de toutes les positions
                             if (board.get(pp) == null) {
-                                HashMap<Placement, Player> h = new HashMap<>(board);
+                                HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> h = new HashMap<>(board);
                                 h.replace(p, null);
                                 h.replace(pp, player1);
                                 Board b = new Board(this);
                                 b.setBoard(h);
-                                moves.add(b);
+                                if (isMoulin(pp)) {
+                                    for (alpha_beta.model.game.Placement ppp : board.keySet()) {
+                                        if (board.get(ppp) == player2) {
+                                            HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> hh = new HashMap<>(board);
+                                            hh.replace(ppp, null);
+                                            Board bb = new Board(this);
+                                            bb.setBoard(hh);
+                                            moves.add(bb);
+                                        }
+                                    }
+                                } else {
+                                    moves.add(b);
+                                }
                             }
                         }
 
@@ -117,19 +129,31 @@ public class Board extends State {
 
             } else {
 
-                for (Placement p : board.keySet()) {
+                for (alpha_beta.model.game.Placement p : board.keySet()) {
                     if (board.get(p) == player1) {
                         //parcours de nos pions
 
-                        for (Placement pp : struct.neighbors(p)) {
+                        for (alpha_beta.model.game.Placement pp : struct.neighbors(p)) {
                             //parcours des voisins
                             if (board.get(pp) == null) {
-                                HashMap<Placement, Player> h = new HashMap<>(board);
+                                HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> h = new HashMap<>(board);
                                 h.replace(p, null);
                                 h.replace(pp, player1);
                                 Board b = new Board(this);
                                 b.setBoard(h);
-                                moves.add(b);
+                                if (isMoulin(pp)) {
+                                    for (alpha_beta.model.game.Placement ppp : board.keySet()) {
+                                        if (board.get(ppp) == player2) {
+                                            HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> hh = new HashMap<>(board);
+                                            hh.replace(ppp, null);
+                                            Board bb = new Board(this);
+                                            bb.setBoard(hh);
+                                            moves.add(bb);
+                                        }
+                                    }
+                                } else {
+                                    moves.add(b);
+                                }
                             }
                         }
 
@@ -143,19 +167,29 @@ public class Board extends State {
         return moves.iterator();
     }
 
-    public HashMap<Placement, Player> getBoard() {
+    private boolean isMoulin (alpha_beta.model.game.Placement p) {
+        boolean isMoulin = false;
+        for (Moulin m : struct.moulinOf(p)) {
+            if (board.get(m.getA()) == player1 && board.get(m.getB()) == player1 && board.get(m.getC()) == player1) {
+                isMoulin = true;
+            }
+        }
+        return isMoulin;
+    }
+
+    public HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> getBoard() {
         return board;
     }
 
-    public void setBoard(HashMap<Placement, Player> board) {
+    public void setBoard(HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> board) {
         this.board = board;
     }
 
-    public Player getPlayer1() {
+    public alpha_beta.model.game.Player getPlayer1() {
         return player1;
     }
 
-    public Player getPlayer2() {
+    public alpha_beta.model.game.Player getPlayer2() {
         return player2;
     }
 
@@ -192,7 +226,7 @@ public class Board extends State {
         StringBuilder sb = new StringBuilder();
 
         for (char a = 'A'; a <= 'X'; a++) {
-            sb.append(board.get(new Placement(String.valueOf(a))));
+            sb.append(board.get(new alpha_beta.model.game.Placement(a)));
 
             if (a == 'C' || a == 'F' || a == 'I' || a == 'O' || a == 'R' || a == 'U' || a == 'X') {
                 sb.append("\n");

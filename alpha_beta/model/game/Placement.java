@@ -1,30 +1,30 @@
-package alpha_beta.game;
+package alpha_beta.model.game;
 
 public class Placement {
 
-    private String coordinate;
+    private char coordinate;
 
-    public Placement(String coordinate) {
+    public Placement(char coordinate) {
         this.coordinate = coordinate;
     }
 
-    public String getCoordinate() {
+    public char getCoordinate() {
         return coordinate;
     }
 
     @Override
     public String toString() {
-        return coordinate;
+        return coordinate + "";
     }
 
     @Override
     public int hashCode() {
-        return coordinate.hashCode();
+        return new Character(coordinate).hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         Placement p = (Placement) obj;
-        return coordinate.equals(p.getCoordinate());
+        return coordinate == p.getCoordinate();
     }
 }

@@ -1,4 +1,4 @@
-package alpha_beta.game;
+package alpha_beta.model.game;
 
 public class Player {
 
