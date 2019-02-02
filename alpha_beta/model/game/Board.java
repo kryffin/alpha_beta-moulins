@@ -1,28 +1,24 @@
 package alpha_beta.model.game;
 
+import javafx.application.Platform;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
 public class Board extends State {
 
-    public static final String ANSI_RESET = "\u001B[0m";
-    public static final String ANSI_BLACK = "\u001B[30m";
-    public static final String ANSI_RED = "\u001B[31m";
-    public static final String ANSI_GREEN = "\u001B[32m";
-    public static final String ANSI_YELLOW = "\u001B[33m";
-    public static final String ANSI_BLUE = "\u001B[34m";
-    public static final String ANSI_PURPLE = "\u001B[35m";
-    public static final String ANSI_CYAN = "\u001B[36m";
-    public static final String ANSI_WHITE = "\u001B[37m";
+    public static int PLACEMENT_COUNT = 24;
 
     private MoulinBoardStructure struct;
 
     private HashMap<Placement, Player> board;
 
-    private alpha_beta.model.game.Player player1; //joueur courant
+    private Player player1; //currentPlayer = true
 
-    private alpha_beta.model.game.Player player2;
+    private Player player2; //currentPlayer = false
+
+    private boolean currentPlayer;
 
     private int ownPawnsToPlace;
 
@@ -33,7 +29,7 @@ public class Board extends State {
     private int advPawnsCount;
 
     public Board (Board b) {
-        this.struct = new alpha_beta.model.game.MoulinBoardStructure();
+        this.struct = new MoulinBoardStructure();
         this.board = new HashMap<>(b.getBoard());
         this.player1 = b.getPlayer1();
         this.player2 = b.getPlayer2();
@@ -41,13 +37,14 @@ public class Board extends State {
         this.ownPawnsCount = b.getOwnPawnsCount();
         this.advPawnsToPlace = b.getAdvPawnsToPlace();
         this.advPawnsCount = b.getAdvPawnsCount();
+        this.currentPlayer = b.isCurrentPlayer();
     }
 
-    public Board(alpha_beta.model.game.Player player1, alpha_beta.model.game.Player player2) {
+    public Board (Player player1, Player player2) {
         this.struct = new alpha_beta.model.game.MoulinBoardStructure();
         board = new HashMap<>();
         for (char a = 'A'; a <= 'X'; a++) {
-            board.put(new alpha_beta.model.game.Placement(a), null);
+            board.put(new Placement(a), null);
         }
         this.player1 = player1;
         this.player2 = player2;
@@ -55,10 +52,11 @@ public class Board extends State {
         this.ownPawnsCount = 9;
         this.advPawnsToPlace = 9;
         this.advPawnsCount = 9;
+        this.currentPlayer = true;
     }
 
-    public Board(HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> board, alpha_beta.model.game.Player player1, alpha_beta.model.game.Player player2, int ownPawnsToPlace, int ownPawnsCount, int advPawnsToPlace, int advPawnsCount) {
-        this.struct = new alpha_beta.model.game.MoulinBoardStructure();
+    public Board (HashMap<Placement, Player> board, Player player1, Player player2, int ownPawnsToPlace, int ownPawnsCount, int advPawnsToPlace, int advPawnsCount, boolean currentPlayer) {
+        this.struct = new MoulinBoardStructure();
         this.board = board;
         this.player1 = player1;
         this.player2 = player2;
@@ -66,37 +64,106 @@ public class Board extends State {
         this.ownPawnsCount = ownPawnsCount;
         this.advPawnsToPlace = advPawnsToPlace;
         this.advPawnsCount = advPawnsCount;
+        this.currentPlayer = currentPlayer;
     }
 
     @Override
-    public int evaluate() {
-        return 0;
+    public void makeMove (State s) {
+
+        if (s == null) {
+            System.out.println("State to make null");
+            return;
+        }
+
+        if (s.getClass() != this.getClass()) {
+            System.out.println("Error on type for making a move in the Board");
+            return;
+        }
+
+        Board b = (Board) s;
+
+        this.board = b.getBoard();
+        this.player1 = b.getPlayer1();
+        this.player2 = b.getPlayer2();
+        this.ownPawnsToPlace = b.getOwnPawnsToPlace();
+        this.ownPawnsCount = b.getOwnPawnsCount();
+        this.advPawnsToPlace = b.getAdvPawnsToPlace();
+        this.advPawnsCount = b.getAdvPawnsCount();
+        this.currentPlayer = b.isCurrentPlayer();
     }
 
     @Override
-    public alpha_beta.model.game.Player currentPlayer() {
+    public double evaluate () {
+        Player p1 = player1;
+        Player p2 = player2;
+
+        if (!isCurrentPlayer()) {
+            p1 = player2;
+            p2 = player1;
+        }
+
+        int aligned1 = alignedCount(p1);
+        int aligned2 = alignedCount(p2);
+
+        double gamma = 0.5d;
+
+        double res = (aligned1 - aligned2 + (gamma * ((PLACEMENT_COUNT - aligned1) - (PLACEMENT_COUNT - aligned2))));
+        System.out.println(res);
+        return res;
+    }
+
+    private int alignedCount (Player p) {
+        int count = 0;
+
+        for (Placement pl : board.keySet()) {
+            if (isMoulin(pl, p, board)) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    @Override
+    public Player currentPlayer() {
         return null;
     }
 
     @Override
     public boolean isGameOver() {
-        return (advPawnsCount <= 2 || !iterator().hasNext());
+        return (advPawnsCount <= 2 || ownPawnsCount <= 2 || !iterator().hasNext());
     }
 
     @Override
-    public Iterator<alpha_beta.model.game.State> iterator() {
-        ArrayList<alpha_beta.model.game.State> moves = new ArrayList<>();
+    public Iterator<State> iterator() {
+        ArrayList<State> moves = new ArrayList<>();
 
-        if (ownPawnsToPlace != 0) {
+        Player p1 = player1;
+        Player p2 = player2;
+        int toPlace = ownPawnsToPlace;
+        int count = ownPawnsToPlace;
+        if (!isCurrentPlayer()) {
+            p1 = player2;
+            p2 = player1;
+            toPlace = advPawnsToPlace;
+            count = advPawnsCount;
+        }
+
+        if (toPlace != 0) {
             //placement : il reste des pions à placer on créer donc des fils de cet état pour chaque placement de pion possible
 
             for (char a = 'A'; a <= 'X'; a++) {
-                if (board.get(new alpha_beta.model.game.Placement(a)) == null) {
-                    HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> h = new HashMap<>(board);
-                    h.replace(new alpha_beta.model.game.Placement(a), player1);
+                if (board.get(new Placement(a)) == null) {
+                    HashMap<Placement, Player> h = new HashMap<>(board);
+                    h.replace(new Placement(a), p1);
                     Board b = new Board(this);
                     b.setBoard(h);
-                    b.setOwnPawnsToPlace(b.getOwnPawnsToPlace()-1);
+                    if (isCurrentPlayer()) {
+                        b.setOwnPawnsToPlace(b.getOwnPawnsToPlace()-1);
+                    } else {
+                        b.setAdvPawnsToPlace(b.getAdvPawnsToPlace() - 1);
+                    }
+                    b.setCurrentPlayer(!b.isCurrentPlayer());
                     moves.add(b);
                 }
             }
@@ -104,31 +171,38 @@ public class Board extends State {
         } else {
             //jeu : plus de pions à placer, on cherche donc à faire des déplacements
 
-            if (ownPawnsCount == 3) {
+            if (count == 3) {
 
-                for (alpha_beta.model.game.Placement p : board.keySet()) {
-                    if (board.get(p) == player1) {
+                for (Placement p : board.keySet()) {
+                    if (board.get(p) == p1) {
                         //parcours de nos pions
 
-                        for (alpha_beta.model.game.Placement pp : board.keySet()) {
+                        for (Placement pp : board.keySet()) {
                             //parcours de toutes les positions
                             if (board.get(pp) == null) {
-                                HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> h = new HashMap<>(board);
+                                HashMap<Placement, Player> h = new HashMap<>(board);
                                 h.replace(p, null);
-                                h.replace(pp, player1);
+                                h.replace(pp, p1);
                                 Board b = new Board(this);
                                 b.setBoard(h);
-                                if (isMoulin(pp)) {
-                                    for (alpha_beta.model.game.Placement ppp : board.keySet()) {
-                                        if (board.get(ppp) == player2) {
-                                            HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> hh = new HashMap<>(board);
+                                if (isMoulin(pp, p1, h)) {
+                                    for (Placement ppp : board.keySet()) {
+                                        if (board.get(ppp) == p2) {
+                                            HashMap<Placement, Player> hh = new HashMap<>(h);
                                             hh.replace(ppp, null);
                                             Board bb = new Board(this);
                                             bb.setBoard(hh);
+                                            bb.setCurrentPlayer(!b.isCurrentPlayer());
+                                            if (isCurrentPlayer()) {
+                                                bb.setAdvPawnsCount(b.getAdvPawnsCount() - 1);
+                                            } else {
+                                                bb.setOwnPawnsCount(b.getOwnPawnsCount() - 1);
+                                            }
                                             moves.add(bb);
                                         }
                                     }
                                 } else {
+                                    b.setCurrentPlayer(!b.isCurrentPlayer());
                                     moves.add(b);
                                 }
                             }
@@ -139,29 +213,36 @@ public class Board extends State {
 
             } else {
 
-                for (alpha_beta.model.game.Placement p : board.keySet()) {
-                    if (board.get(p) == player1) {
+                for (Placement p : board.keySet()) {
+                    if (board.get(p) == p1) {
                         //parcours de nos pions
 
-                        for (alpha_beta.model.game.Placement pp : struct.neighbors(p)) {
+                        for (Placement pp : struct.neighbors(p)) {
                             //parcours des voisins
                             if (board.get(pp) == null) {
-                                HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> h = new HashMap<>(board);
+                                HashMap<Placement, Player> h = new HashMap<>(board);
                                 h.replace(p, null);
-                                h.replace(pp, player1);
+                                h.replace(pp, p1);
                                 Board b = new Board(this);
                                 b.setBoard(h);
-                                if (isMoulin(pp)) {
-                                    for (alpha_beta.model.game.Placement ppp : board.keySet()) {
-                                        if (board.get(ppp) == player2) {
-                                            HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> hh = new HashMap<>(board);
+                                if (isMoulin(pp, p1, h)) {
+                                    for (Placement ppp : board.keySet()) {
+                                        if (board.get(ppp) == p2) {
+                                            HashMap<Placement, Player> hh = new HashMap<>(h);
                                             hh.replace(ppp, null);
                                             Board bb = new Board(this);
                                             bb.setBoard(hh);
+                                            bb.setCurrentPlayer(!b.isCurrentPlayer());
+                                            if (isCurrentPlayer()) {
+                                                bb.setAdvPawnsCount(b.getAdvPawnsCount() - 1);
+                                            } else {
+                                                bb.setOwnPawnsCount(b.getOwnPawnsCount() - 1);
+                                            }
                                             moves.add(bb);
                                         }
                                     }
                                 } else {
+                                    b.setCurrentPlayer(!b.isCurrentPlayer());
                                     moves.add(b);
                                 }
                             }
@@ -177,30 +258,63 @@ public class Board extends State {
         return moves.iterator();
     }
 
-    private boolean isMoulin (alpha_beta.model.game.Placement p) {
+    private boolean isMoulin (Placement p, Player player, HashMap<Placement, Player> b) {
         boolean isMoulin = false;
         for (Moulin m : struct.moulinOf(p)) {
-            if (board.get(m.getA()) == player1 && board.get(m.getB()) == player1 && board.get(m.getC()) == player1) {
+            if (b.get(m.getA()) == player && b.get(m.getB()) == player && b.get(m.getC()) == player) {
                 isMoulin = true;
             }
         }
         return isMoulin;
     }
 
-    public HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> getBoard() {
+    @Override
+    public Player getWinner() {
+        if (!isGameOver()) {
+            return null;
+        }
+
+        if (isCurrentPlayer()) {
+            if (ownPawnsCount <= 2) {
+                return player2;
+            }
+            if (advPawnsCount <= 2 || !iterator().hasNext()) {
+                return player1;
+            }
+        } else {
+            if (ownPawnsCount <= 2) {
+                return player1;
+            }
+            if (advPawnsCount <= 2 || !iterator().hasNext()) {
+                return player2;
+            }
+        }
+
+        return null;
+    }
+
+    public HashMap<Placement, Player> getBoard() {
         return board;
     }
 
-    public void setBoard(HashMap<alpha_beta.model.game.Placement, alpha_beta.model.game.Player> board) {
+    public void setBoard(HashMap<Placement, Player> board) {
         this.board = board;
     }
 
-    public alpha_beta.model.game.Player getPlayer1() {
+    public Player getPlayer1() {
         return player1;
     }
 
-    public alpha_beta.model.game.Player getPlayer2() {
+    public Player getPlayer2() {
         return player2;
+    }
+
+    public void setPlayer1(Player player1) {
+        this.player1 = player1;
+    }
+
+    public void setPlayer2(Player player2) {
+        this.player2 = player2;
     }
 
     public int getOwnPawnsToPlace() {
@@ -213,6 +327,10 @@ public class Board extends State {
 
     public int getAdvPawnsToPlace() {
         return advPawnsToPlace;
+    }
+
+    public void setAdvPawnsToPlace(int advPawnsToPlace) {
+        this.advPawnsToPlace = advPawnsToPlace;
     }
 
     public int getOwnPawnsCount() {
@@ -231,18 +349,34 @@ public class Board extends State {
         this.advPawnsCount = advPawnsCount;
     }
 
+    public boolean isCurrentPlayer() {
+        return currentPlayer;
+    }
+
+    public void setCurrentPlayer(boolean currentPlayer) {
+        this.currentPlayer = currentPlayer;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
+        if (isCurrentPlayer()) {
+            sb.append(">>" + player1 + "  " +  player2 + "\nPawns : " + ownPawnsCount + "  advPawns : " + advPawnsCount + "\n");
+            sb.append("alignés : " + alignedCount(player1) + "\n");
+        } else {
+            sb.append(player1 + "  >>" +  player2 + "\nPawns : " + advPawnsCount + "  advPawns : " + ownPawnsCount + "\n");
+            sb.append("alignés : " + alignedCount(player2) + "\n");
+        }
+
+        sb.append(evaluate() + "\n");
+
         for (char a = 'A'; a <= 'X'; a++) {
-            Player p = board.get(new alpha_beta.model.game.Placement(a));
+            Player p = board.get(new Placement(a));
             if (p == null) {
                 sb.append("X");
-            } else if (p == player1) {
-                sb.append(ANSI_RED + p + ANSI_RESET);
             } else {
-                sb.append(ANSI_BLUE + p + ANSI_RESET);
+                sb.append(p);
             }
 
 
