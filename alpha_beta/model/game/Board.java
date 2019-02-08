@@ -1,12 +1,12 @@
 package alpha_beta.model.game;
 
-import javafx.application.Platform;
+import alpha_beta.view.BoardView;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
 public class Board extends State {
+
+    private BoardView view;
 
     public static int PLACEMENT_COUNT = 24;
 
@@ -38,9 +38,10 @@ public class Board extends State {
         this.advPawnsToPlace = b.getAdvPawnsToPlace();
         this.advPawnsCount = b.getAdvPawnsCount();
         this.currentPlayer = b.isCurrentPlayer();
+        this.view = b.view;
     }
 
-    public Board (Player player1, Player player2) {
+    public Board (Player player1, Player player2, BoardView view) {
         this.struct = new alpha_beta.model.game.MoulinBoardStructure();
         board = new HashMap<>();
         for (char a = 'A'; a <= 'X'; a++) {
@@ -53,6 +54,7 @@ public class Board extends State {
         this.advPawnsToPlace = 9;
         this.advPawnsCount = 9;
         this.currentPlayer = true;
+        this.view = view;
     }
 
     public Board (HashMap<Placement, Player> board, Player player1, Player player2, int ownPawnsToPlace, int ownPawnsCount, int advPawnsToPlace, int advPawnsCount, boolean currentPlayer) {
@@ -108,7 +110,7 @@ public class Board extends State {
         double gamma = 0.5d;
 
         double res = (aligned1 - aligned2 + (gamma * ((PLACEMENT_COUNT - aligned1) - (PLACEMENT_COUNT - aligned2))));
-        System.out.println(res);
+        System.out.println(p1 + " = " + aligned1 + " : " + aligned2 + " > " + res);
         return res;
     }
 
@@ -355,6 +357,10 @@ public class Board extends State {
 
     public void setCurrentPlayer(boolean currentPlayer) {
         this.currentPlayer = currentPlayer;
+    }
+
+    public void updateView () {
+        view.update(board, player1, player2);
     }
 
     @Override

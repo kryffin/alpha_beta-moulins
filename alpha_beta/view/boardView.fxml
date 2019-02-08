@@ -12,8 +12,9 @@
             <Image url="/board.jpg" />
          </image>
       </ImageView>
-      <Button mnemonicParsing="false" text="Button" AnchorPane.leftAnchor="0.0" />
-      <Button mnemonicParsing="false" text="Button" AnchorPane.leftAnchor="275.0" />
-      <Button mnemonicParsing="false" text="Button" AnchorPane.leftAnchor="541.0" />
+      <Button mnemonicParsing="false" text="A" AnchorPane.leftAnchor="0.0" />
+      <Button mnemonicParsing="false" text="B" AnchorPane.leftAnchor="275.0" />
+      <Button mnemonicParsing="false" text="C" AnchorPane.leftAnchor="541.0" />
+      <Button mnemonicParsing="false" text="D" AnchorPane.leftAnchor="100.0" AnchorPane.topAnchor="150.0" />
    </children>
 </AnchorPane>
