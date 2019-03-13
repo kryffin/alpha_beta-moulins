@@ -1,5 +1,6 @@
 package alpha_beta.view;
 
+import alpha_beta.client_server.Client;
 import alpha_beta.model.game.Board;
 import alpha_beta.model.game.Placement;
 import alpha_beta.model.game.Player;
@@ -18,6 +19,7 @@ public class BoardView extends AnchorPane {
 
     private HashMap<Character, Button> buttons;
     private Board s;
+    private Client client;
 
     public BoardView () {
         super();
@@ -27,14 +29,20 @@ public class BoardView extends AnchorPane {
         s = new Board(new Player("1"), new Player("2"), this);
     }
 
+    public BoardView (Client client) {
+        this();
+        this.client = client;
+    }
+
     private void move () {
-        double eval = 0.d;
-        State bestMove = null;
+        double eval;
+        State bestMove;
 
         Iterator<State> ite = s.iterator();
         bestMove = ite.next();
         eval = bestMove.evaluate();
         State tmp;
+        String res = "";
 
         while (ite.hasNext()) {
             tmp = ite.next();
@@ -45,7 +53,15 @@ public class BoardView extends AnchorPane {
         }
 
         s.makeMove(bestMove);
+        //envoi du move au serveur/client
+        try {
+            client.send(((Board)bestMove).getMoves());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         System.out.println(bestMove);
+        System.out.println("Mouvements : " + ((Board)bestMove).getMoves());
+        System.out.println(s);
         update(s.getBoard(), s.getPlayer1(), s.getPlayer2());
     }
 
@@ -58,6 +74,11 @@ public class BoardView extends AnchorPane {
                 @Override
                 public void handle(ActionEvent actionEvent) {
                     move();
+                    try {
+                        s.setMoves(client.receive());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             });
         }

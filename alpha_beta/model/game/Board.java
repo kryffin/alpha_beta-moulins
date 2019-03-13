@@ -28,6 +28,10 @@ public class Board extends State {
 
     private int advPawnsCount;
 
+    private char whereToPlace;
+    private char whichToRemove;
+    private char whichToKill;
+
     public Board (Board b) {
         this.struct = new MoulinBoardStructure();
         this.board = new HashMap<>(b.getBoard());
@@ -110,7 +114,6 @@ public class Board extends State {
         double gamma = 0.5d;
 
         double res = (aligned1 - aligned2 + (gamma * ((PLACEMENT_COUNT - aligned1) - (PLACEMENT_COUNT - aligned2))));
-        System.out.println(p1 + " = " + aligned1 + " : " + aligned2 + " > " + res);
         return res;
     }
 
@@ -166,6 +169,7 @@ public class Board extends State {
                         b.setAdvPawnsToPlace(b.getAdvPawnsToPlace() - 1);
                     }
                     b.setCurrentPlayer(!b.isCurrentPlayer());
+                    b.setMoves(a + "ZZ"); //placement d'un pion en a
                     moves.add(b);
                 }
             }
@@ -188,6 +192,7 @@ public class Board extends State {
                                 Board b = new Board(this);
                                 b.setBoard(h);
                                 if (isMoulin(pp, p1, h)) {
+                                    //il y a un moulin, on cherche donc à tuer un pion
                                     for (Placement ppp : board.keySet()) {
                                         if (board.get(ppp) == p2) {
                                             HashMap<Placement, Player> hh = new HashMap<>(h);
@@ -200,11 +205,13 @@ public class Board extends State {
                                             } else {
                                                 bb.setOwnPawnsCount(b.getOwnPawnsCount() - 1);
                                             }
+                                            bb.setMoves(p.getCoordinate() + pp.toString() + ppp.toString());
                                             moves.add(bb);
                                         }
                                     }
                                 } else {
                                     b.setCurrentPlayer(!b.isCurrentPlayer());
+                                    b.setMoves(p.toString() + pp.toString() + 'Z');
                                     moves.add(b);
                                 }
                             }
@@ -240,11 +247,13 @@ public class Board extends State {
                                             } else {
                                                 bb.setOwnPawnsCount(b.getOwnPawnsCount() - 1);
                                             }
+                                            bb.setMoves(p.toString() + pp.toString() + ppp.toString());
                                             moves.add(bb);
                                         }
                                     }
                                 } else {
                                     b.setCurrentPlayer(!b.isCurrentPlayer());
+                                    b.setMoves(p.toString() + pp.toString() + 'Z');
                                     moves.add(b);
                                 }
                             }
@@ -357,6 +366,32 @@ public class Board extends State {
 
     public void setCurrentPlayer(boolean currentPlayer) {
         this.currentPlayer = currentPlayer;
+    }
+
+    public String getMoves () {
+        StringBuilder sb = new StringBuilder();
+        sb.append(whereToPlace);
+        sb.append(whichToRemove);
+        sb.append(whichToKill);
+        return sb.toString();
+    }
+
+    private void updateBoard () {
+        //si l'on reçois un mouvement c'est donc celui du joueur 2
+        board.replace(new Placement(whereToPlace), player2);
+        if (whichToRemove != 'Z') {
+            board.replace(new Placement(whichToRemove), null);
+        }
+        if (whichToKill != 'Z') {
+            board.replace(new Placement(whichToKill), null);
+        }
+    }
+
+    public void setMoves (String s) {
+        whereToPlace = s.charAt(0);
+        whichToRemove = s.charAt(1);
+        whichToKill = s.charAt(2);
+        updateBoard();
     }
 
     public void updateView () {
