@@ -68,26 +68,87 @@ public class Board extends State {
         this.advPawnsCount = advPawnsCount;
     }
 
-    @Override
-    public double evaluate (boolean enemy) {
+    private boolean isWinningState (boolean enemy) {
+        if (enemy && ownPawnsCount < 3 || enemy && !iterator().hasNext()) {
+            return true;
+        } else if (!enemy && advPawnsCount < 3 || !enemy && !enemyIterator().hasNext()) {
+            return true;
+        }
+        return false;
+    }
+
+    private int nbMoulins (boolean enemy) {
         Player p1 = player1;
         Player p2 = player2;
 
         if (enemy) {
-            p1 = player2;
             p2 = player1;
+            p1 = player2;
         }
 
-        int aligned1 = alignedCount(p1);
-        int aligned2 = alignedCount(p2);
+        int nbMoulins = 0;
 
-        double gamma = 0.5d;
+        for (Placement pla : board.keySet()) {
+            for (Moulin moulin : struct.moulinOf(pla)) {
+                boolean isMoulin = false;
+                for (Placement pla1 : moulin) {
+                    if (board.get(pla1) != p1) {
+                        isMoulin = false;
+                    }
+                }
+                if (isMoulin) {
+                    nbMoulins++;
+                }
+            }
+        }
 
-        double res = (aligned1 - aligned2 + (gamma * ((PLACEMENT_COUNT - aligned1) - (PLACEMENT_COUNT - aligned2))));
-        return res;
+        return nbMoulins;
     }
 
-    private int alignedCount (Player p) {
+    /**
+     * Fonction évaluant l'état actuel, heuristique dépendant de la victoire, le nombre de pions (différence), le nombre de moulins et le nombre de moulins (différence), de même pour le nombre de pions alignés
+     * @param enemy vrai si le joueur évalué est le joueur 2, faux si c'est le joueur 1
+     * @return l'évaluation de l'état
+     */
+    @Override
+    public double evaluate (boolean enemy) {
+
+        if (isWinningState(enemy)) {
+            return Double.MAX_EXPONENT;
+        }
+
+        int ownPawns = ownPawnsCount;
+        int advPawns = advPawnsCount;
+
+        if (enemy) {
+            ownPawns = advPawnsCount;
+            advPawns = ownPawnsCount;
+        }
+
+        double gammaPawnsCount = 10.d;
+        double resPawnsCount = gammaPawnsCount * (ownPawns - advPawns);
+
+        double gammaNbMoulins = 16.d;
+        double resNbMoulins = gammaNbMoulins * nbMoulins(enemy);
+
+        double gammaNbMoulinsDiff = 20.d;
+        double resNbMoulinsDiff = gammaNbMoulinsDiff * (nbMoulins(enemy) - nbMoulins(!enemy));
+
+        double gammaAlignedCount = 10.d;
+        double resAlignedCount = gammaAlignedCount * (alignedCount(enemy));
+
+        double gammaAlignedCountDiff = 15.d;
+        double resAlignedCountDiff = gammaAlignedCount * (alignedCount(enemy) - alignedCount(!enemy));
+
+        return resPawnsCount + resNbMoulins + resNbMoulinsDiff + resAlignedCount + resAlignedCountDiff;
+    }
+
+    private int alignedCount (boolean enemy) {
+        Player p = player1;
+        if (enemy) {
+            p = player2;
+        }
+
         int count = 0;
 
         for (Placement pl : board.keySet()) {
@@ -117,12 +178,6 @@ public class Board extends State {
         Player p2 = player2;
         int toPlace = ownPawnsToPlace;
         int count = ownPawnsCount;
-        /*if (!isCurrentPlayer()) {
-            p1 = player2;
-            p2 = player1;
-            toPlace = advPawnsToPlace;
-            count = advPawnsCount;
-        }*/
 
         if (toPlace > 0) {
             //placement : il reste des pions à placer on créer donc des fils de cet état pour chaque placement de pion possible

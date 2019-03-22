@@ -1,6 +1,9 @@
 package alpha_beta.model.game;
 
-public class Moulin {
+import java.util.ArrayList;
+import java.util.Iterator;
+
+public class Moulin implements Iterable<Placement> {
 
     private Placement A;
     private alpha_beta.model.game.Placement B;
@@ -26,5 +29,15 @@ public class Moulin {
 
     public alpha_beta.model.game.Placement getC() {
         return C;
+    }
+
+    @Override
+    public Iterator<Placement> iterator() {
+        ArrayList<Placement> moulin = new ArrayList<>();
+        moulin.add(A);
+        moulin.add(B);
+        moulin.add(C);
+
+        return moulin.iterator();
     }
 }

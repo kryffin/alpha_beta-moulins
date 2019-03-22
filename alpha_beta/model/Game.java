@@ -15,6 +15,7 @@ public class Game extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("Moulins");
+        view.setStage(primaryStage);
         primaryStage.setScene(new Scene(view, 600, 600));
         primaryStage.show();
     }

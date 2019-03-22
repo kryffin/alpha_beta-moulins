@@ -5,17 +5,19 @@ import alpha_beta.model.game.Board;
 import alpha_beta.model.game.Placement;
 import alpha_beta.model.game.Player;
 import alpha_beta.model.game.State;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Random;
 
 public class BoardView extends AnchorPane {
 
@@ -23,10 +25,12 @@ public class BoardView extends AnchorPane {
     private HashMap<String, Label> labels;
     private Board s;
     private Client client;
-    private short state;
+    private Stage stage;
+    private Player win;
 
     public BoardView () {
         super();
+        win = null;
         ImageView iv = new ImageView(new Image("board.jpg"));
         getChildren().add(iv);
         initButtons();
@@ -40,38 +44,90 @@ public class BoardView extends AnchorPane {
         this.client = client;
     }
 
+    public void setStage (Stage stage) {
+        this.stage = stage;
+    }
+
     private void move (char move) {
         System.out.println("Il y a eu volonté de clicker sur " + move + ".");
+    }
+
+    private void checkWin () {
+        if (s.getOwnPawnsCount() < 3) {
+            System.out.println("\n\nVICTOIRE DU JOUEUR 2\n\n");
+            win = s.getPlayer2();
+        } else if (s.getAdvPawnsCount() < 3) {
+            System.out.println("\n\nVICTOIRE DU JOUEUR 1\n\n");
+            win = s.getPlayer1();
+        }
+    }
+
+    private void printWinner (Player winner) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Nous avons un gagnant!");
+        alert.setHeaderText(null);
+        alert.setContentText("Victoire du Joueur " + winner);
+
+        alert.showAndWait();
+        stage.close();
+        Platform.exit();
     }
 
     private void ownTurn () {
         double eval;
         State bestMove;
 
-        Iterator<State> ite = s.iterator();
-        bestMove = ite.next();
-        eval = bestMove.evaluate(false);
-        State tmp;
-        String res = "";
+        //première passe pour évaluer le meilleur score
 
-        while (ite.hasNext()) {
-            tmp = ite.next();
-            if (eval < tmp.evaluate(false)) {
-                eval = tmp.evaluate(false);
-                bestMove = tmp;
+        Iterator<State> ite = s.iterator();
+
+        if (!ite.hasNext()) {
+            win = s.getPlayer2();
+        } else {
+
+            ArrayList<State> states = new ArrayList<>();
+            bestMove = ite.next();
+            eval = bestMove.evaluate(false);
+            State tmp;
+            String res = "";
+
+            while (ite.hasNext()) {
+                tmp = ite.next();
+                states.add(tmp);
+                if (eval < tmp.evaluate(false)) {
+                    eval = tmp.evaluate(false);
+                    bestMove = tmp;
+                }
             }
+
+            //deuxième passe pour récupérer les états dont le score est égal au score max
+
+            ArrayList<State> bestStates = new ArrayList<>();
+
+            for (State st : states) {
+                if (st.evaluate(false) == eval) {
+                    bestStates.add(st);
+                }
+            }
+
+            Random r = new Random();
+            bestMove = bestStates.get(r.nextInt(bestStates.size()));
+
+            s.makeMove(((Board)bestMove).getMoves(), s.getPlayer1());
+
+            System.out.println(">>" + s.getPlayer1() + " : " + s.getPlayer2());
+            System.out.println(s);
+            System.out.println("Mouvement effectué : " + ((Board)bestMove).getMoves() + "\n\n");
+
         }
 
-        s.makeMove(((Board)bestMove).getMoves(), s.getPlayer1());
         //envoi du move au serveur/client
         /*try {
             client.send(((Board)bestMove).getMoves());
         } catch (Exception e) {
             e.printStackTrace();
         }*/
-        System.out.println(">>" + s.getPlayer1() + " : " + s.getPlayer2());
-        System.out.println(s);
-        System.out.println("Mouvement effectué : " + ((Board)bestMove).getMoves() + "\n\n");
+
         update();
     }
 
@@ -79,30 +135,53 @@ public class BoardView extends AnchorPane {
         double eval;
         State bestMove;
 
-        Iterator<State> ite = s.enemyIterator();
-        bestMove = ite.next();
-        eval = bestMove.evaluate(true);
-        State tmp;
-        String res = "";
+        //première passe pour évaluer le meilleur score
 
-        while (ite.hasNext()) {
-            tmp = ite.next();
-            if (eval < tmp.evaluate(true)) {
-                eval = tmp.evaluate(true);
-                bestMove = tmp;
+        Iterator<State> ite = s.enemyIterator();
+
+        if (!ite.hasNext()) {
+            win = s.getPlayer1();
+        } else {
+
+            ArrayList<State> states = new ArrayList<>();
+            bestMove = ite.next();
+            eval = bestMove.evaluate(true);
+            State tmp;
+
+            while (ite.hasNext()) {
+                tmp = ite.next();
+                states.add(tmp);
+                if (eval < tmp.evaluate(true)) {
+                    eval = tmp.evaluate(true);
+                }
             }
+
+            //deuxième passe pour récupérer les états dont le score est égal au score max
+
+            ArrayList<State> bestStates = new ArrayList<>();
+
+            for (State st : states) {
+                if (st.evaluate(true) == eval) {
+                    bestStates.add(st);
+                }
+            }
+
+            Random r = new Random();
+            bestMove = bestStates.get(r.nextInt(bestStates.size()));
+
+            s.makeMove(((Board)bestMove).getMoves(), s.getPlayer2());
+            //envoi du move au serveur/client
+            /*try {
+            client.send(((Board)bestMove).getMoves());
+            } catch (Exception e) {
+            e.printStackTrace();
+            }*/
+            System.out.println(s.getPlayer1() + " : >>" + s.getPlayer2());
+            System.out.println(s);
+            System.out.println("Mouvement effectué : " + ((Board)bestMove).getMoves() + "\n\n");
+
         }
 
-        s.makeMove(((Board)bestMove).getMoves(), s.getPlayer2());
-        //envoi du move au serveur/client
-        /*try {
-            client.send(((Board)bestMove).getMoves());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-        System.out.println(s.getPlayer1() + " : >>" + s.getPlayer2());
-        System.out.println(s);
-        System.out.println("Mouvement effectué : " + ((Board)bestMove).getMoves() + "\n\n");
         update();
     }
 
@@ -150,12 +229,7 @@ public class BoardView extends AnchorPane {
             buttons.put(a, new Button(a + ""));
             if (a != 'Y') {
                 char button = a;
-                buttons.get(a).setOnAction(new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent actionEvent) {
-                        move(button);
-                    }
-                });
+                buttons.get(a).setOnAction(actionEvent -> move(button));
             }
         }
 
@@ -235,11 +309,15 @@ public class BoardView extends AnchorPane {
         buttons.get('Y').setLayoutY(290.d);
         buttons.get('Y').setText("AI turn");
         buttons.get('Y').setStyle("-fx-background-color: #66ff66;");
-        buttons.get('Y').setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent actionEvent) {
-                ownTurn();
+        buttons.get('Y').setOnAction(actionEvent -> {
+            ownTurn();
+            checkWin();
+            if (win == null) {
                 enemyTurn();
+                checkWin();
+            }
+            if (win != null) {
+                printWinner(win);
             }
         });
 
