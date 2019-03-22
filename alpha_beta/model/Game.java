@@ -12,13 +12,6 @@ public class Game extends Application {
 
     private static BoardView view;
 
-    public Game () {
-
-
-        launch();
-
-    }
-
     @Override
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("Moulins");
@@ -31,8 +24,6 @@ public class Game extends Application {
         State s = new Board(new Player("1"), new Player("2"), view);
 
         launch(args);
-
-
     }
 
 }

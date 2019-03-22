@@ -4,9 +4,9 @@ import java.util.Iterator;
 
 public abstract class State implements Iterable<State> {
 
-    public abstract void makeMove (State s);
+    public abstract void makeMove (String move, Player p);
 
-    public abstract double evaluate ();
+    public abstract double evaluate (boolean enemy);
 
     public abstract Player currentPlayer ();
 

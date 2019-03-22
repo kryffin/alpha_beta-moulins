@@ -18,8 +18,6 @@ public class Board extends State {
 
     private Player player2; //currentPlayer = false
 
-    private boolean currentPlayer;
-
     private int ownPawnsToPlace;
 
     private int ownPawnsCount;
@@ -41,7 +39,6 @@ public class Board extends State {
         this.ownPawnsCount = b.getOwnPawnsCount();
         this.advPawnsToPlace = b.getAdvPawnsToPlace();
         this.advPawnsCount = b.getAdvPawnsCount();
-        this.currentPlayer = b.isCurrentPlayer();
         this.view = b.view;
     }
 
@@ -57,11 +54,10 @@ public class Board extends State {
         this.ownPawnsCount = 9;
         this.advPawnsToPlace = 9;
         this.advPawnsCount = 9;
-        this.currentPlayer = true;
         this.view = view;
     }
 
-    public Board (HashMap<Placement, Player> board, Player player1, Player player2, int ownPawnsToPlace, int ownPawnsCount, int advPawnsToPlace, int advPawnsCount, boolean currentPlayer) {
+    public Board (HashMap<Placement, Player> board, Player player1, Player player2, int ownPawnsToPlace, int ownPawnsCount, int advPawnsToPlace, int advPawnsCount) {
         this.struct = new MoulinBoardStructure();
         this.board = board;
         this.player1 = player1;
@@ -70,40 +66,14 @@ public class Board extends State {
         this.ownPawnsCount = ownPawnsCount;
         this.advPawnsToPlace = advPawnsToPlace;
         this.advPawnsCount = advPawnsCount;
-        this.currentPlayer = currentPlayer;
     }
 
     @Override
-    public void makeMove (State s) {
-
-        if (s == null) {
-            System.out.println("State to make null");
-            return;
-        }
-
-        if (s.getClass() != this.getClass()) {
-            System.out.println("Error on type for making a move in the Board");
-            return;
-        }
-
-        Board b = (Board) s;
-
-        this.board = b.getBoard();
-        this.player1 = b.getPlayer1();
-        this.player2 = b.getPlayer2();
-        this.ownPawnsToPlace = b.getOwnPawnsToPlace();
-        this.ownPawnsCount = b.getOwnPawnsCount();
-        this.advPawnsToPlace = b.getAdvPawnsToPlace();
-        this.advPawnsCount = b.getAdvPawnsCount();
-        this.currentPlayer = b.isCurrentPlayer();
-    }
-
-    @Override
-    public double evaluate () {
+    public double evaluate (boolean enemy) {
         Player p1 = player1;
         Player p2 = player2;
 
-        if (!isCurrentPlayer()) {
+        if (enemy) {
             p1 = player2;
             p2 = player1;
         }
@@ -146,15 +116,15 @@ public class Board extends State {
         Player p1 = player1;
         Player p2 = player2;
         int toPlace = ownPawnsToPlace;
-        int count = ownPawnsToPlace;
-        if (!isCurrentPlayer()) {
+        int count = ownPawnsCount;
+        /*if (!isCurrentPlayer()) {
             p1 = player2;
             p2 = player1;
             toPlace = advPawnsToPlace;
             count = advPawnsCount;
-        }
+        }*/
 
-        if (toPlace != 0) {
+        if (toPlace > 0) {
             //placement : il reste des pions à placer on créer donc des fils de cet état pour chaque placement de pion possible
 
             for (char a = 'A'; a <= 'X'; a++) {
@@ -163,14 +133,27 @@ public class Board extends State {
                     h.replace(new Placement(a), p1);
                     Board b = new Board(this);
                     b.setBoard(h);
-                    if (isCurrentPlayer()) {
-                        b.setOwnPawnsToPlace(b.getOwnPawnsToPlace()-1);
+                    if (isMoulin(new Placement(a), p1, h)) {
+                        //il y a un moulin, on cherche donc à tuer un pion
+                        for (Placement ppp : board.keySet()) {
+                            if (board.get(ppp) == p2) {
+                                HashMap<Placement, Player> hh = new HashMap<>(h);
+                                hh.replace(ppp, null);
+                                Board bb = new Board(this);
+                                bb.setBoard(hh);
+                                //bb.setCurrentPlayer(!bb.isCurrentPlayer());
+                                bb.setAdvPawnsCount(b.getAdvPawnsCount() - 1);
+                                bb.setOwnPawnsToPlace(b.getOwnPawnsToPlace() - 1);
+                                bb.setMoves("" + a + 'Z' + ppp.getCoordinate());
+                                moves.add(bb);
+                            }
+                        }
                     } else {
-                        b.setAdvPawnsToPlace(b.getAdvPawnsToPlace() - 1);
+                        b.setOwnPawnsToPlace(toPlace - 1);
+                        //b.setCurrentPlayer(!b.isCurrentPlayer());
+                        b.setMoves(a + "ZZ"); //placement d'un pion en a
+                        moves.add(b);
                     }
-                    b.setCurrentPlayer(!b.isCurrentPlayer());
-                    b.setMoves(a + "ZZ"); //placement d'un pion en a
-                    moves.add(b);
                 }
             }
 
@@ -199,19 +182,15 @@ public class Board extends State {
                                             hh.replace(ppp, null);
                                             Board bb = new Board(this);
                                             bb.setBoard(hh);
-                                            bb.setCurrentPlayer(!b.isCurrentPlayer());
-                                            if (isCurrentPlayer()) {
-                                                bb.setAdvPawnsCount(b.getAdvPawnsCount() - 1);
-                                            } else {
-                                                bb.setOwnPawnsCount(b.getOwnPawnsCount() - 1);
-                                            }
-                                            bb.setMoves(p.getCoordinate() + pp.toString() + ppp.toString());
+                                            //bb.setCurrentPlayer(!bb.isCurrentPlayer());
+                                            bb.setAdvPawnsCount(b.getAdvPawnsCount() - 1);
+                                            bb.setMoves("" + pp.getCoordinate() + p.getCoordinate() + ppp.getCoordinate());
                                             moves.add(bb);
                                         }
                                     }
                                 } else {
-                                    b.setCurrentPlayer(!b.isCurrentPlayer());
-                                    b.setMoves(p.toString() + pp.toString() + 'Z');
+                                    //b.setCurrentPlayer(!b.isCurrentPlayer());
+                                    b.setMoves("" + pp.getCoordinate() + p.getCoordinate() + 'Z');
                                     moves.add(b);
                                 }
                             }
@@ -241,19 +220,142 @@ public class Board extends State {
                                             hh.replace(ppp, null);
                                             Board bb = new Board(this);
                                             bb.setBoard(hh);
-                                            bb.setCurrentPlayer(!b.isCurrentPlayer());
-                                            if (isCurrentPlayer()) {
-                                                bb.setAdvPawnsCount(b.getAdvPawnsCount() - 1);
-                                            } else {
-                                                bb.setOwnPawnsCount(b.getOwnPawnsCount() - 1);
-                                            }
-                                            bb.setMoves(p.toString() + pp.toString() + ppp.toString());
+                                            //bb.setCurrentPlayer(!bb.isCurrentPlayer());
+                                            bb.setAdvPawnsCount(b.getAdvPawnsCount() - 1);
+                                            bb.setMoves("" + pp.getCoordinate() + p.getCoordinate() + ppp.getCoordinate());
                                             moves.add(bb);
                                         }
                                     }
                                 } else {
-                                    b.setCurrentPlayer(!b.isCurrentPlayer());
-                                    b.setMoves(p.toString() + pp.toString() + 'Z');
+                                    //b.setCurrentPlayer(!b.isCurrentPlayer());
+                                    b.setMoves("" + pp.getCoordinate() + p.getCoordinate() + 'Z');
+                                    moves.add(b);
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+        }
+
+        return moves.iterator();
+    }
+
+    public Iterator<State> enemyIterator() {
+        ArrayList<State> moves = new ArrayList<>();
+
+        Player p1 = player2;
+        Player p2 = player1;
+        int toPlace = advPawnsToPlace;
+        int count = advPawnsCount;
+
+        if (toPlace > 0) {
+            //placement : il reste des pions à placer on créer donc des fils de cet état pour chaque placement de pion possible
+
+            for (char a = 'A'; a <= 'X'; a++) {
+                if (board.get(new Placement(a)) == null) {
+                    HashMap<Placement, Player> h = new HashMap<>(board);
+                    h.replace(new Placement(a), p1);
+                    Board b = new Board(this);
+                    if (isMoulin(new Placement(a), p1, h)) {
+                        //il y a un moulin, on cherche donc à tuer un pion
+                        for (Placement ppp : board.keySet()) {
+                            if (board.get(ppp) == p2) {
+                                HashMap<Placement, Player> hh = new HashMap<>(h);
+                                hh.replace(ppp, null);
+                                Board bb = new Board(this);
+                                bb.setBoard(hh);
+                                //bb.setCurrentPlayer(!bb.isCurrentPlayer());
+                                bb.setAdvPawnsCount(b.getAdvPawnsCount() - 1);
+                                bb.setAdvPawnsToPlace(b.getAdvPawnsToPlace() - 1);
+                                bb.setMoves("" + a + 'Z' + ppp.getCoordinate());
+                                moves.add(bb);
+                            }
+                        }
+                    } else {
+                        b.setAdvPawnsToPlace(toPlace - 1);
+                        //b.setCurrentPlayer(!b.isCurrentPlayer());
+                        b.setMoves(a + "ZZ"); //placement d'un pion en a
+                        moves.add(b);
+                    }
+                }
+            }
+
+        } else {
+            //jeu : plus de pions à placer, on cherche donc à faire des déplacements
+
+            if (count == 3) {
+
+                for (Placement p : board.keySet()) {
+                    if (board.get(p) == p1) {
+                        //parcours de nos pions
+
+                        for (Placement pp : board.keySet()) {
+                            //parcours de toutes les positions
+                            if (board.get(pp) == null) {
+                                HashMap<Placement, Player> h = new HashMap<>(board);
+                                h.replace(p, null);
+                                h.replace(pp, p1);
+                                Board b = new Board(this);
+                                b.setBoard(h);
+                                if (isMoulin(pp, p1, h)) {
+                                    //il y a un moulin, on cherche donc à tuer un pion
+                                    for (Placement ppp : board.keySet()) {
+                                        if (board.get(ppp) == p2) {
+                                            HashMap<Placement, Player> hh = new HashMap<>(h);
+                                            hh.replace(ppp, null);
+                                            Board bb = new Board(this);
+                                            bb.setBoard(hh);
+                                            //bb.setCurrentPlayer(!bb.isCurrentPlayer());
+                                            bb.setOwnPawnsCount(b.getOwnPawnsCount() - 1);
+                                            bb.setMoves("" + pp.getCoordinate() + p.getCoordinate() + ppp.getCoordinate());
+                                            moves.add(bb);
+                                        }
+                                    }
+                                } else {
+                                    //b.setCurrentPlayer(!b.isCurrentPlayer());
+                                    b.setMoves("" + pp.getCoordinate() + p.getCoordinate() + 'Z');
+                                    moves.add(b);
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+            } else {
+
+                for (Placement p : board.keySet()) {
+                    if (board.get(p) == p1) {
+                        //parcours de nos pions
+
+                        for (Placement pp : struct.neighbors(p)) {
+                            //parcours des voisins
+                            if (board.get(pp) == null) {
+                                HashMap<Placement, Player> h = new HashMap<>(board);
+                                h.replace(p, null);
+                                h.replace(pp, p1);
+                                Board b = new Board(this);
+                                b.setBoard(h);
+                                if (isMoulin(pp, p1, h)) {
+                                    for (Placement ppp : board.keySet()) {
+                                        if (board.get(ppp) == p2) {
+                                            HashMap<Placement, Player> hh = new HashMap<>(h);
+                                            hh.replace(ppp, null);
+                                            Board bb = new Board(this);
+                                            bb.setBoard(hh);
+                                            //bb.setCurrentPlayer(!bb.isCurrentPlayer());
+                                            bb.setOwnPawnsCount(b.getOwnPawnsCount() - 1);
+                                            bb.setMoves("" + pp.getCoordinate() + p.getCoordinate() + ppp.getCoordinate());
+                                            moves.add(bb);
+                                        }
+                                    }
+                                } else {
+                                    //b.setCurrentPlayer(!b.isCurrentPlayer());
+                                    b.setMoves("" + pp.getCoordinate() + p.getCoordinate() + 'Z');
                                     moves.add(b);
                                 }
                             }
@@ -284,21 +386,11 @@ public class Board extends State {
         if (!isGameOver()) {
             return null;
         }
-
-        if (isCurrentPlayer()) {
-            if (ownPawnsCount <= 2) {
-                return player2;
-            }
-            if (advPawnsCount <= 2 || !iterator().hasNext()) {
-                return player1;
-            }
-        } else {
-            if (ownPawnsCount <= 2) {
-                return player1;
-            }
-            if (advPawnsCount <= 2 || !iterator().hasNext()) {
-                return player2;
-            }
+        if (ownPawnsCount <= 2 || !iterator().hasNext()) {
+            return player2;
+        }
+        if (advPawnsCount <= 2) {
+            return player1;
         }
 
         return null;
@@ -360,14 +452,6 @@ public class Board extends State {
         this.advPawnsCount = advPawnsCount;
     }
 
-    public boolean isCurrentPlayer() {
-        return currentPlayer;
-    }
-
-    public void setCurrentPlayer(boolean currentPlayer) {
-        this.currentPlayer = currentPlayer;
-    }
-
     public String getMoves () {
         StringBuilder sb = new StringBuilder();
         sb.append(whereToPlace);
@@ -376,14 +460,32 @@ public class Board extends State {
         return sb.toString();
     }
 
-    private void updateBoard () {
+    public void makeMove (String move, Player p) {
+        setMoves(move);
         //si l'on reçois un mouvement c'est donc celui du joueur 2
-        board.replace(new Placement(whereToPlace), player2);
+
+        //où placer le pion
+        board.replace(new Placement(whereToPlace), p);
+
+        //où retirer le pion qu'on déplace
         if (whichToRemove != 'Z') {
             board.replace(new Placement(whichToRemove), null);
+        } else {
+            if (p == player1) {
+                ownPawnsToPlace--;
+            } else {
+                advPawnsToPlace--;
+            }
         }
+
+        //pion ennemi à supprimer
         if (whichToKill != 'Z') {
             board.replace(new Placement(whichToKill), null);
+            if (p == player1) {
+                advPawnsCount--;
+            } else {
+                ownPawnsCount--;
+            }
         }
     }
 
@@ -391,26 +493,17 @@ public class Board extends State {
         whereToPlace = s.charAt(0);
         whichToRemove = s.charAt(1);
         whichToKill = s.charAt(2);
-        updateBoard();
     }
 
     public void updateView () {
-        view.update(board, player1, player2);
+        view.update();
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        if (isCurrentPlayer()) {
-            sb.append(">>" + player1 + "  " +  player2 + "\nPawns : " + ownPawnsCount + "  advPawns : " + advPawnsCount + "\n");
-            sb.append("alignés : " + alignedCount(player1) + "\n");
-        } else {
-            sb.append(player1 + "  >>" +  player2 + "\nPawns : " + advPawnsCount + "  advPawns : " + ownPawnsCount + "\n");
-            sb.append("alignés : " + alignedCount(player2) + "\n");
-        }
-
-        sb.append(evaluate() + "\n");
+        sb.append("Pawns : " + ownPawnsCount + "(" + ownPawnsToPlace + ")" + "  advPawns : " + advPawnsCount + "(" + advPawnsToPlace + ")" + "\n");
 
         for (char a = 'A'; a <= 'X'; a++) {
             Player p = board.get(new Placement(a));

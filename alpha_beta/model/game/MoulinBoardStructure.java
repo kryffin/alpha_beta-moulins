@@ -171,7 +171,7 @@ public class MoulinBoardStructure {
         moulins.add(new alpha_beta.model.game.Moulin('C', 'O', 'X'));
         moulins.add(new alpha_beta.model.game.Moulin('J', 'K', 'L'));
         moulins.add(new alpha_beta.model.game.Moulin('M', 'N', 'O'));
-        moulins.add(new alpha_beta.model.game.Moulin('B', 'F', 'H'));
+        moulins.add(new alpha_beta.model.game.Moulin('B', 'E', 'H'));
         moulins.add(new alpha_beta.model.game.Moulin('Q', 'T', 'W'));
     }
 
