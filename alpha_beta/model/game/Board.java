@@ -138,7 +138,7 @@ public class Board extends State {
         double resAlignedCount = gammaAlignedCount * (alignedCount(enemy));
 
         double gammaAlignedCountDiff = 15.d;
-        double resAlignedCountDiff = gammaAlignedCount * (alignedCount(enemy) - alignedCount(!enemy));
+        double resAlignedCountDiff = gammaAlignedCountDiff * (alignedCount(enemy) - alignedCount(!enemy));
 
         return resPawnsCount + resNbMoulins + resNbMoulinsDiff + resAlignedCount + resAlignedCountDiff;
     }

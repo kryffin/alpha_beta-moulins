@@ -27,6 +27,7 @@ public class BoardView extends AnchorPane {
     private Client client;
     private Stage stage;
     private Player win;
+    private boolean showDebug = false;
 
     public BoardView () {
         super();
@@ -42,6 +43,26 @@ public class BoardView extends AnchorPane {
     public BoardView (Client client) {
         this();
         this.client = client;
+    }
+
+    public void toggleDebug () {
+        System.out.println("ICIC");
+        showDebug = !showDebug;
+        if (showDebug) {
+            labels.get("j1").setVisible(true);
+            labels.get("j2").setVisible(true);
+            labels.get("nbPions").setVisible(true);
+            labels.get("nbPionsE").setVisible(true);
+            labels.get("aPlacer").setVisible(true);
+            labels.get("aPlacerE").setVisible(true);
+        } else {
+            labels.get("j1").setVisible(false);
+            labels.get("j2").setVisible(false);
+            labels.get("nbPions").setVisible(false);
+            labels.get("nbPionsE").setVisible(false);
+            labels.get("aPlacer").setVisible(false);
+            labels.get("aPlacerE").setVisible(false);
+        }
     }
 
     public void setStage (Stage stage) {
@@ -194,8 +215,11 @@ public class BoardView extends AnchorPane {
         labels.get("j2").setStyle("-fx-background-color: #ff6666;");
         labels.get("j1").setLayoutX(100.d);
         labels.get("j1").setLayoutY(0.d);
+        labels.get("j1").setVisible(false);
         labels.get("j2").setLayoutX(400.d);
         labels.get("j2").setLayoutY(0.d);
+        labels.get("j2").setVisible(false);
+
 
         labels.put("aPlacer", new Label("Pions à placer : " + s.getOwnPawnsToPlace()));
         labels.put("nbPions", new Label("Pions en jeu : " + s.getOwnPawnsCount()));
@@ -203,10 +227,12 @@ public class BoardView extends AnchorPane {
         labels.get("aPlacer").setLayoutX(100.d);
         labels.get("aPlacer").setLayoutY(50.d);
         labels.get("aPlacer").setStyle("-fx-background-color: #6666ff;");
+        labels.get("aPlacer").setVisible(false);
 
         labels.get("nbPions").setLayoutX(100.d);
         labels.get("nbPions").setLayoutY(150.d);
         labels.get("nbPions").setStyle("-fx-background-color: #6666ff;");
+        labels.get("nbPions").setVisible(false);
 
         labels.put("aPlacerE", new Label("Pions à placer (adversaire) : " + s.getOwnPawnsToPlace()));
         labels.put("nbPionsE", new Label("Pions en jeu (adversaires) : " + s.getOwnPawnsCount()));
@@ -214,10 +240,12 @@ public class BoardView extends AnchorPane {
         labels.get("aPlacerE").setLayoutX(400.d);
         labels.get("aPlacerE").setLayoutY(50.d);
         labels.get("aPlacerE").setStyle("-fx-background-color: #ff6666;");
+        labels.get("aPlacerE").setVisible(false);
 
         labels.get("nbPionsE").setLayoutX(400.d);
         labels.get("nbPionsE").setLayoutY(150.d);
         labels.get("nbPionsE").setStyle("-fx-background-color: #ff6666;");
+        labels.get("nbPionsE").setVisible(false);
 
         getChildren().addAll(labels.values());
     }
