@@ -1,13 +1,26 @@
 package alpha_beta.model.game;
 
+/**
+ * @author KLEINHENTZ 'Kryffin' Nicolas
+ */
 public class Placement {
 
+    /**
+     * coordonée de l'emplacement
+     */
     private char coordinate;
 
+    /**
+     * Constructeur par coordonnée
+     * @param coordinate coordonnée
+     */
     public Placement(char coordinate) {
         this.coordinate = coordinate;
     }
 
+    /**
+     * @return coordonnée de l'emplacement
+     */
     public char getCoordinate() {
         return coordinate;
     }

@@ -4,32 +4,75 @@ import alpha_beta.view.BoardView;
 
 import java.util.*;
 
+/**
+ * @author KLEINHENTZ 'Kryffin' Nicolas
+ */
 public class Board extends State {
 
+    /**
+     * vue graphique du jeu
+     */
     private BoardView view;
 
-    public static int PLACEMENT_COUNT = 24;
-
+    /**
+     * Structure du plateau de jeu
+     */
     private MoulinBoardStructure struct;
 
+    /**
+     * HashMap des placements et leurs appartenance
+     */
     private HashMap<Placement, Player> board;
 
+    /**
+     * premier joueur
+     */
     private Player player1; //currentPlayer = true
 
+    /**
+     * second joueur
+     */
     private Player player2; //currentPlayer = false
 
+    /**
+     * nombre de pions à placer du joueur 1
+     */
     private int ownPawnsToPlace;
 
+    /**
+     * nombre de pions du joueur 1
+     */
     private int ownPawnsCount;
 
+    /**
+     * nombre de pions à placer du joueur 2
+     */
     private int advPawnsToPlace;
 
+    /**
+     * nombre de pions du joueur 2
+     */
     private int advPawnsCount;
 
+    /**
+     * Gestion des tour de jeu par 3 lettres, première lettre : où placer le pion
+     */
     private char whereToPlace;
+
+    /**
+     * Gestion des tour de jeu par 3 lettres, seconde lettre : où retirer le pion
+     */
     private char whichToRemove;
+
+    /**
+     * Gestion des tour de jeu par 3 lettres, troisième lettre : quel pion adverse tuer
+     */
     private char whichToKill;
 
+    /**
+     * Constructeur de copie
+     * @param b Plateau à recopier
+     */
     public Board (Board b) {
         this.struct = new MoulinBoardStructure();
         this.board = new HashMap<>(b.getBoard());
@@ -42,6 +85,12 @@ public class Board extends State {
         this.view = b.view;
     }
 
+    /**
+     * Constructeur par joueurs et vue
+     * @param player1 joueur 1
+     * @param player2 joueur 2
+     * @param view vue graphique
+     */
     public Board (Player player1, Player player2, BoardView view) {
         this.struct = new alpha_beta.model.game.MoulinBoardStructure();
         board = new HashMap<>();
@@ -57,17 +106,11 @@ public class Board extends State {
         this.view = view;
     }
 
-    public Board (HashMap<Placement, Player> board, Player player1, Player player2, int ownPawnsToPlace, int ownPawnsCount, int advPawnsToPlace, int advPawnsCount) {
-        this.struct = new MoulinBoardStructure();
-        this.board = board;
-        this.player1 = player1;
-        this.player2 = player2;
-        this.ownPawnsToPlace = ownPawnsToPlace;
-        this.ownPawnsCount = ownPawnsCount;
-        this.advPawnsToPlace = advPawnsToPlace;
-        this.advPawnsCount = advPawnsCount;
-    }
-
+    /**
+     * Vérifie si le plateau est dans un état gagnant pour un joueur
+     * @param enemy vrai si l'on doit vérifier l'état gagnant pour le joueur 2, faux pour le joueur 1
+     * @return vrai si l'état est gagnant, faux sinon
+     */
     private boolean isWinningState (boolean enemy) {
         if (enemy && ownPawnsCount < 3 || enemy && !iterator().hasNext()) {
             return true;
@@ -77,20 +120,26 @@ public class Board extends State {
         return false;
     }
 
+    /**
+     * Calcule le nombre de moulins pour le joueur 1 ou 2
+     * @param enemy vrai pour le calcul du nombre de moulin pour le joueur 2, faux sinon
+     * @return nombre de moulin du joueur
+     */
     private int nbMoulins (boolean enemy) {
         Player p1 = player1;
-        Player p2 = player2;
 
         if (enemy) {
-            p2 = player1;
             p1 = player2;
         }
 
         int nbMoulins = 0;
 
+        //parcours des placements du plateau
         for (Placement pla : board.keySet()) {
+            //parcours des moulins du palcement pla actuel
             for (Moulin moulin : struct.moulinOf(pla)) {
                 boolean isMoulin = false;
+                //parcours des placements du moulin
                 for (Placement pla1 : moulin) {
                     if (board.get(pla1) != p1) {
                         isMoulin = false;
@@ -113,6 +162,7 @@ public class Board extends State {
     @Override
     public double evaluate (boolean enemy) {
 
+        //on retourne un entier le plus élevé possible si l'état est gagnant
         if (isWinningState(enemy)) {
             return Double.MAX_EXPONENT;
         }
@@ -125,24 +175,35 @@ public class Board extends State {
             advPawns = ownPawnsCount;
         }
 
+        //calcul de la différence du nombre de pions
         double gammaPawnsCount = 10.d;
         double resPawnsCount = gammaPawnsCount * (ownPawns - advPawns);
 
+        //calcul du nombre de moulins
         double gammaNbMoulins = 16.d;
         double resNbMoulins = gammaNbMoulins * nbMoulins(enemy);
 
+        //calcul de la différence du nombre de moulins
         double gammaNbMoulinsDiff = 20.d;
         double resNbMoulinsDiff = gammaNbMoulinsDiff * (nbMoulins(enemy) - nbMoulins(!enemy));
 
+        //calcul du nombre de pions alignés
         double gammaAlignedCount = 10.d;
         double resAlignedCount = gammaAlignedCount * (alignedCount(enemy));
 
+        //calcul de la différence du nombre de pions alignés
         double gammaAlignedCountDiff = 15.d;
         double resAlignedCountDiff = gammaAlignedCountDiff * (alignedCount(enemy) - alignedCount(!enemy));
 
+        //calcul final de l'évaluation, addition des précédents calculs
         return resPawnsCount + resNbMoulins + resNbMoulinsDiff + resAlignedCount + resAlignedCountDiff;
     }
 
+    /**
+     * Calcul du nombre de pions alignés
+     * @param enemy vrai pour le calcul pour le joueur 2, faux pour le joueur 1
+     * @return nombre de pions alignés
+     */
     private int alignedCount (boolean enemy) {
         Player p = player1;
         if (enemy) {
@@ -160,16 +221,19 @@ public class Board extends State {
         return count;
     }
 
-    @Override
-    public Player currentPlayer() {
-        return null;
-    }
-
+    /**
+     * Vérifie si le jeu est terminé ou pas
+     * @return vrai pour la fin du jeu, faux sinon
+     */
     @Override
     public boolean isGameOver() {
         return (advPawnsCount <= 2 || ownPawnsCount <= 2 || !iterator().hasNext());
     }
 
+    /**
+     * itérateur sur les coups possibles du joueur 1 à partir de l'état actuel
+     * @return un itérateur
+     */
     @Override
     public Iterator<State> iterator() {
         ArrayList<State> moves = new ArrayList<>();
@@ -299,6 +363,10 @@ public class Board extends State {
         return moves.iterator();
     }
 
+    /**
+     * itérateur sur les coups possibles du joueur 2 à partir de l'état actuel
+     * @return un itérateur
+     */
     public Iterator<State> enemyIterator() {
         ArrayList<State> moves = new ArrayList<>();
 
@@ -426,6 +494,13 @@ public class Board extends State {
         return moves.iterator();
     }
 
+    /**
+     * Vérifie si il y a un moulin en placant un joueur à une certain placement
+     * @param p placement concerné
+     * @param player joueur jouant
+     * @param b placements actuel
+     * @return vrai s'il y a moulin, faux sinon
+     */
     private boolean isMoulin (Placement p, Player player, HashMap<Placement, Player> b) {
         boolean isMoulin = false;
         for (Moulin m : struct.moulinOf(p)) {
@@ -436,77 +511,98 @@ public class Board extends State {
         return isMoulin;
     }
 
-    @Override
-    public Player getWinner() {
-        if (!isGameOver()) {
-            return null;
-        }
-        if (ownPawnsCount <= 2 || !iterator().hasNext()) {
-            return player2;
-        }
-        if (advPawnsCount <= 2) {
-            return player1;
-        }
-
-        return null;
-    }
-
+    /**
+     * @return placements actuel
+     */
     public HashMap<Placement, Player> getBoard() {
         return board;
     }
 
+    /**
+     * Setteur sur les placements
+     * @param board placements
+     */
     public void setBoard(HashMap<Placement, Player> board) {
         this.board = board;
     }
 
+    /**
+     * @return joueur 1
+     */
     public Player getPlayer1() {
         return player1;
     }
 
+    /**
+     * @return joueur 2
+     */
     public Player getPlayer2() {
         return player2;
     }
 
-    public void setPlayer1(Player player1) {
-        this.player1 = player1;
-    }
-
-    public void setPlayer2(Player player2) {
-        this.player2 = player2;
-    }
-
+    /**
+     * @return nombre de pions à placer du joueur 1
+     */
     public int getOwnPawnsToPlace() {
         return ownPawnsToPlace;
     }
 
+    /**
+     * Setteur sur le nombre de pions à placer du joueur 1
+     * @param ownPawnsToPlace nombre de pions à placer
+     */
     public void setOwnPawnsToPlace(int ownPawnsToPlace) {
         this.ownPawnsToPlace = ownPawnsToPlace;
     }
 
+    /**
+     * @return nombre de pions à placer du joueur 2
+     */
     public int getAdvPawnsToPlace() {
         return advPawnsToPlace;
     }
 
+    /**
+     * Setteur sur le nombre de pions à placer du joueur 2
+     * @param advPawnsToPlace nombre de pions à placer
+     */
     public void setAdvPawnsToPlace(int advPawnsToPlace) {
         this.advPawnsToPlace = advPawnsToPlace;
     }
 
+    /**
+     * @return nombre de pions vivant du joueur 1
+     */
     public int getOwnPawnsCount() {
         return ownPawnsCount;
     }
 
+    /**
+     * Setteur sur le nombre de pions vivants du joueur 1
+     * @param ownPawnsCount nombres de pions vivants
+     */
     public void setOwnPawnsCount(int ownPawnsCount) {
         this.ownPawnsCount = ownPawnsCount;
     }
 
+    /**
+     * @return nombre de pions vivant du joueur 2
+     */
     public int getAdvPawnsCount() {
         return advPawnsCount;
     }
 
+    /**
+     * Setteur sur le nombre de pions vivants du joueur 2
+     * @param advPawnsCount nombres de pions vivants
+     */
     public void setAdvPawnsCount(int advPawnsCount) {
         this.advPawnsCount = advPawnsCount;
     }
 
+    /**
+     * @return concaténation des 3 actions faites en une suite de 3 lettres
+     */
     public String getMoves () {
         StringBuilder sb = new StringBuilder();
         sb.append(whereToPlace);
@@ -515,6 +611,11 @@ public class Board extends State {
         return sb.toString();
     }
 
+    /**
+     * Effectue le mouvement défini par 3 lettres
+     * @param move suite de 3 lettres définissant le mouvement à effectuer
+     * @param p joueur à faire jouer
+     */
     public void makeMove (String move, Player p) {
         setMoves(move);
         //si l'on reçois un mouvement c'est donc celui du joueur 2
@@ -544,14 +645,14 @@ public class Board extends State {
         }
     }
 
+    /**
+     * Setteur sur la suite de 3 lettres définissant l'action à effectuer
+     * @param s
+     */
     public void setMoves (String s) {
         whereToPlace = s.charAt(0);
         whichToRemove = s.charAt(1);
         whichToKill = s.charAt(2);
-    }
-
-    public void updateView () {
-        view.update();
     }
 
     @Override

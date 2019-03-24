@@ -3,17 +3,32 @@ package alpha_beta.model.game;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * @author KLEINHENTZ 'Kryffin' Nicolas
+ */
 public class MoulinBoardStructure {
 
+    /**
+     * HashMap des voisins de chaque emplacements
+     */
     private HashMap<Placement, Iterable<alpha_beta.model.game.Placement>> neighbors;
 
+    /**
+     * liste des moulins du plateau
+     */
     private ArrayList<alpha_beta.model.game.Moulin> moulins;
 
+    /**
+     * Constructeur vide
+     */
     public MoulinBoardStructure () {
         initBoard();
         initMoulins();
     }
 
+    /**
+     * Initialise les voisins de chaque positions
+     */
     private void initBoard () {
         neighbors = new HashMap<>();
         ArrayList<alpha_beta.model.game.Placement> l = new ArrayList<>();
@@ -154,6 +169,9 @@ public class MoulinBoardStructure {
         neighbors.put(new alpha_beta.model.game.Placement('X'), l);
     }
 
+    /**
+     * Initialise les moulins du plateau
+     */
     private void initMoulins () {
         moulins = new ArrayList<>();
 
@@ -175,10 +193,20 @@ public class MoulinBoardStructure {
         moulins.add(new alpha_beta.model.game.Moulin('Q', 'T', 'W'));
     }
 
+    /**
+     * Itérateur sur les voisins de l'emplacement p
+     * @param p emplacement sur lequel itérer
+     * @return itérateur
+     */
     public Iterable<alpha_beta.model.game.Placement> neighbors (alpha_beta.model.game.Placement p) {
         return neighbors.get(p);
     }
 
+    /**
+     * Itérateur sur les moulins contenant l'emplacement p
+     * @param p emplacement sur lequel itérer
+     * @return itérateur
+     */
     public Iterable<alpha_beta.model.game.Moulin> moulinOf (alpha_beta.model.game.Placement p) {
         ArrayList<alpha_beta.model.game.Moulin> lm = new ArrayList<>();
         for (alpha_beta.model.game.Moulin m : moulins) {

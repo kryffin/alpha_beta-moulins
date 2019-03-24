@@ -1,6 +1,5 @@
 package alpha_beta.view;
 
-import alpha_beta.client_server.Client;
 import alpha_beta.model.game.Board;
 import alpha_beta.model.game.Placement;
 import alpha_beta.model.game.Player;
@@ -19,16 +18,44 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
+/**
+ * @author KLEINHENTZ 'Kryffin' Nicolas
+ */
 public class BoardView extends AnchorPane {
 
+    /**
+     * HashMap des boutons des emplacements du plateau
+     */
     private HashMap<Character, Button> buttons;
+
+    /**
+     * HashMap des label d'affichage en mode debug (appui sur 'd' pour afficher le debug)
+     */
     private HashMap<String, Label> labels;
+
+    /**
+     * Plateau actuel du jeu
+     */
     private Board s;
-    private Client client;
+
+    /**
+     * Stage de la fenêtre graphique
+     */
     private Stage stage;
+
+    /**
+     * Joueur gagnant, null si le jeu n'est pas fini
+     */
     private Player win;
+
+    /**
+     * vrai si le debug est à afficher, faux sinon
+     */
     private boolean showDebug = false;
 
+    /**
+     * Constructeur vide
+     */
     public BoardView () {
         super();
         win = null;
@@ -40,13 +67,10 @@ public class BoardView extends AnchorPane {
         update();
     }
 
-    public BoardView (Client client) {
-        this();
-        this.client = client;
-    }
-
+    /**
+     * Afficher / cacher les labels de debug (appui sur 'd')
+     */
     public void toggleDebug () {
-        System.out.println("ICIC");
         showDebug = !showDebug;
         if (showDebug) {
             labels.get("j1").setVisible(true);
@@ -65,35 +89,53 @@ public class BoardView extends AnchorPane {
         }
     }
 
+    /**
+     * Setteur sur le stage de la fenêtre graphique
+     * @param stage stage à lier à la classe
+     */
     public void setStage (Stage stage) {
         this.stage = stage;
     }
 
+    /**
+     * Méthode utilisée lors de l'appui sur une des cases du plateau (non utilisé)
+     * @param move lettre définissant la position clickée
+     */
     private void move (char move) {
-        System.out.println("Il y a eu volonté de clicker sur " + move + ".");
+        System.out.println("Appui sur " + move + ".");
     }
 
+    /**
+     * vérifie si le plateau actuel est en état de victoire pour un des deux joueurs ou non
+     */
     private void checkWin () {
         if (s.getOwnPawnsCount() < 3) {
-            System.out.println("\n\nVICTOIRE DU JOUEUR 2\n\n");
             win = s.getPlayer2();
         } else if (s.getAdvPawnsCount() < 3) {
-            System.out.println("\n\nVICTOIRE DU JOUEUR 1\n\n");
             win = s.getPlayer1();
         }
     }
 
+    /**
+     * Méthode d'affichage du gagnant dans une nouvelle fenêtre, suivi de la fermeture du jeu
+     * @param winner joueur gagnant à afficher
+     */
     private void printWinner (Player winner) {
+        //création d'une nouvelle fenêtre de type Alert
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Nous avons un gagnant!");
         alert.setHeaderText(null);
         alert.setContentText("Victoire du Joueur " + winner);
 
+        //affiche de la fenêtre, à sa fermeture on arrête l'application
         alert.showAndWait();
         stage.close();
         Platform.exit();
     }
 
+    /**
+     * Tour du joueur 1
+     */
     private void ownTurn () {
         double eval;
         State bestMove;
@@ -103,6 +145,7 @@ public class BoardView extends AnchorPane {
         Iterator<State> ite = s.iterator();
 
         if (!ite.hasNext()) {
+            //si aucun mouvement n'est possible on perd la partie
             win = s.getPlayer2();
         } else {
 
@@ -117,7 +160,6 @@ public class BoardView extends AnchorPane {
                 states.add(tmp);
                 if (eval < tmp.evaluate(false)) {
                     eval = tmp.evaluate(false);
-                    bestMove = tmp;
                 }
             }
 
@@ -135,23 +177,15 @@ public class BoardView extends AnchorPane {
             bestMove = bestStates.get(r.nextInt(bestStates.size()));
 
             s.makeMove(((Board)bestMove).getMoves(), s.getPlayer1());
-
-            System.out.println(">>" + s.getPlayer1() + " : " + s.getPlayer2());
-            System.out.println(s);
-            System.out.println("Mouvement effectué : " + ((Board)bestMove).getMoves() + "\n\n");
-
         }
 
-        //envoi du move au serveur/client
-        /*try {
-            client.send(((Board)bestMove).getMoves());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-
+        //mise à jour du plateau
         update();
     }
 
+    /**
+     * Tour du joueur 2
+     */
     private void enemyTurn () {
         double eval;
         State bestMove;
@@ -161,6 +195,7 @@ public class BoardView extends AnchorPane {
         Iterator<State> ite = s.enemyIterator();
 
         if (!ite.hasNext()) {
+            //si aucun mouvement n'est possible on perd la partie
             win = s.getPlayer1();
         } else {
 
@@ -191,21 +226,15 @@ public class BoardView extends AnchorPane {
             bestMove = bestStates.get(r.nextInt(bestStates.size()));
 
             s.makeMove(((Board)bestMove).getMoves(), s.getPlayer2());
-            //envoi du move au serveur/client
-            /*try {
-            client.send(((Board)bestMove).getMoves());
-            } catch (Exception e) {
-            e.printStackTrace();
-            }*/
-            System.out.println(s.getPlayer1() + " : >>" + s.getPlayer2());
-            System.out.println(s);
-            System.out.println("Mouvement effectué : " + ((Board)bestMove).getMoves() + "\n\n");
-
         }
 
+        //mise à jour du plateau
         update();
     }
 
+    /**
+     * Initialisation des labels de debug
+     */
     private void initLabels () {
         labels = new HashMap<>();
 
@@ -247,9 +276,13 @@ public class BoardView extends AnchorPane {
         labels.get("nbPionsE").setStyle("-fx-background-color: #ff6666;");
         labels.get("nbPionsE").setVisible(false);
 
+        //ajout des labels à la fenêtre graphique
         getChildren().addAll(labels.values());
     }
 
+    /**
+     * Initialisation des boutons
+     */
     private void initButtons () {
         buttons = new HashMap<>();
 
@@ -349,21 +382,27 @@ public class BoardView extends AnchorPane {
             }
         });
 
+        //ajout des boutons à la fenêtre graphique
         getChildren().addAll(buttons.values());
     }
 
+    /**
+     * Mise à jour du plateau de la fenêtre graphique
+     */
     public void update() {
         Player p;
         for (char a = 'A'; a <= 'X'; a++) {
             p = s.getBoard().get(new Placement(a));
             if (p == null) {
-                buttons.get(a).setStyle("-fx-background-color: #ffffff;");
+                buttons.get(a).setStyle("-fx-background-color: #ffffff;"); //bouton blanc si aucune appartenance
             } else if (p == s.getPlayer1()) {
-                buttons.get(a).setStyle("-fx-background-color: #6666ff;");
+                buttons.get(a).setStyle("-fx-background-color: #6666ff;"); //bouton bleu si appartient au joueur 1
             } else if (p == s.getPlayer2()) {
-                buttons.get(a).setStyle("-fx-background-color: #ff6666;");
+                buttons.get(a).setStyle("-fx-background-color: #ff6666;"); //bouton rouge si appartient au joueur 2
             }
         }
+
+        //mise à jour des labels de debug
 
         labels.get("aPlacer").setText("Pions à placer : " + s.getOwnPawnsToPlace());
         labels.get("nbPions").setText("Pions en jeu : " + s.getOwnPawnsCount());

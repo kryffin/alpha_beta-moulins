@@ -11,8 +11,14 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
+/**
+ * @author KLEINHENTZ 'Kryffin' Nicolas
+ */
 public class Game extends Application {
 
+    /**
+     * Vue graphique du jeu
+     */
     private static BoardView view;
 
     @Override
